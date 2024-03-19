@@ -1,1 +1,1 @@
-Deno.serve(() => new Response("Hello Guid!"));
+Deno.serve(() => new Response("Hello Guid 2!"));
