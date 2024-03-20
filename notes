@@ -1,0 +1,8 @@
+production deployment
+---------------------
+cmdline:
+  export DENO_DEPLOY_TOKEN=
+  deployctl deploy --project=warm-dolphin-21 --prod src/server.ts  
+dashboard:
+  https://dash.deno.com/projects/warm-dolphin-21/deployments
+  promote deployment to production

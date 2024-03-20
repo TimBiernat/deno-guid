@@ -1,0 +1,9 @@
+{
+  "version": "3",
+  "redirects": {
+    "https://deno.land/x/ulid/mod.ts": "https://deno.land/x/ulid@v0.3.0/mod.ts"
+  },
+  "remote": {
+    "https://deno.land/x/ulid@v0.3.0/mod.ts": "f7ff065b66abd485051fc68af23becef6ccc7e81f7774d7fcfd894a4b2da1984"
+  }
+}
