@@ -45,10 +45,10 @@ Deno.serve(options, async (request) => {
         return new Response("user exists", { status: 409 });
       } else {
         const guid = ulid();
-        // kv.set([COLLECTION, path], guid);
-        const res = await kv.atomic()
-          .set([COLLECTION, path], guid)
-          .commit();
+        const res = await kv.set([COLLECTION, path], guid);
+        // const res = await kv.atomic()
+        //   .set([COLLECTION, path], guid)
+        //   .commit();
         if (!res.ok) {
           log.info("commit failed");
         }
