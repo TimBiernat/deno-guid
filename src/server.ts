@@ -54,7 +54,7 @@ Deno.serve(options, async (request) => {
         log.warn("user not found: " + path);
         return new Response("user not found: " + path, { status: 404 });
       } else {
-        kv.set([COLLECTION, path], ulid());
+        await kv.set([COLLECTION, path], ulid());
         const result = await kv.get<string>([COLLECTION, path]);
         log.info("user updated: " + JSON.stringify(result));
         return new Response(JSON.stringify(result), { status: 200 });
