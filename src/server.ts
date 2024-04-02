@@ -45,7 +45,13 @@ Deno.serve(options, async (request) => {
         return new Response("user exists", { status: 409 });
       } else {
         const guid = ulid();
-        kv.set([COLLECTION, path], guid);
+        // kv.set([COLLECTION, path], guid);
+        const res = await kv.atomic()
+          .set([COLLECTION, path], guid)
+          .commit();
+        if (!res.ok) {
+          log.info("commit failed");
+        }
         const result = await kv.get<string>([COLLECTION, path], {
           consistency: "strong",
         });
@@ -60,19 +66,10 @@ Deno.serve(options, async (request) => {
         return new Response("user not found: " + path, { status: 404 });
       } else {
         const guid = ulid();
-        // kv.set([COLLECTION, path], guid);
-        // const result = await kv.get<string>([COLLECTION, path], { consistency: "strong" });
-
-        const res = await kv.atomic()
-          .set([COLLECTION, path], guid)
-          .commit();
-        if (!res.ok) {
-          log.info("commit failed");
-        }
+        kv.set([COLLECTION, path], guid);
         const result = await kv.get<string>([COLLECTION, path], {
           consistency: "strong",
         });
-
         log.info("user updated: " + JSON.stringify(result));
         return new Response(JSON.stringify(result), { status: 200 });
       }
