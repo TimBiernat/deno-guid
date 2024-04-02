@@ -1,10 +1,6 @@
 import { monotonicFactory } from "https://deno.land/x/ulid@v0.3.0/mod.ts";
 import * as log from "https://deno.land/std@0.221.0/log/mod.ts";
 
-function serverError(error: unknown) {
-  return new Response("bad request:" + error, { status: 400 });
-}
-
 log.setup({
   handlers: {
     default: new log.ConsoleHandler("INFO", {
@@ -17,11 +13,7 @@ const COLLECTION = "users";
 const ulid = monotonicFactory();
 const kv = await Deno.openKv();
 
-const options: Deno.ServeOptions = {
-  onError: serverError,
-};
-
-Deno.serve(options, async (request) => {
+Deno.serve(async (request) => {
   const url = new URL(request.url);
   const path = url.pathname.trim().slice(1);
 
