@@ -1,36 +1,79 @@
 import { monotonicFactory } from "https://deno.land/x/ulid@v0.3.0/mod.ts";
+import * as log from "https://deno.land/std@0.221.0/log/mod.ts";
+
+function serverError(error: unknown) {
+  return new Response("bad request:" + error, { status: 400 });
+}
+
+log.setup({
+  handlers: {
+    default: new log.ConsoleHandler("INFO", {
+      useColors: true,
+    }),
+  },
+});
 
 const COLLECTION = "users";
 const ulid = monotonicFactory();
 const kv = await Deno.openKv();
 
-Deno.serve(async (request) => {
+const options: Deno.ServeOptions = {
+  onError: serverError,
+};
+
+Deno.serve(options, async (request) => {
   const url = new URL(request.url);
-  let path = url.pathname.trim().slice(1);
-  let guid;
-  if (path.length > 0 && path !== "favicon.ico") {
-    if (path.endsWith("+")) { 
-      path = path.slice(0, -1);
+  const path = url.pathname.trim().slice(1);
+
+  switch (request.method) {
+    case "GET": {
       const result = await kv.get<string>([COLLECTION, path]);
-      if (result.value) {  // update user
-        guid = ulid();
-        kv.set([COLLECTION, path], guid);
-        console.log(path + ":" + guid + " (UPDATE)");
-        return new Response(guid, { status: 200 });
+      if (!result.value) {
+        log.warn("user not found: " + path);
+        return new Response("user not found " + path, { status: 404 });
       } else {
-        return new Response("Error: user not found", { status: 404 });
+        log.info("user found: " + JSON.stringify(result));
+        return new Response(JSON.stringify(result), { status: 200 });
       }
     }
-    const result = await kv.get<string>([COLLECTION, path]);
-    if (result.value) { // existing user
-      guid = result.value;
-      console.log(path + ":" + guid);
-    } else { // new user
-      guid = ulid();
-      kv.set([COLLECTION, path], guid);
-      console.log(path + ":" + guid + " (CREATE)");
+    case "POST": {
+      const result = await kv.get<string>([COLLECTION, path]);
+      if (result.value) {
+        log.warn("user exists: " + path);
+        return new Response("user exists", { status: 409 });
+      } else {
+        const guid = ulid();
+        kv.set([COLLECTION, path], guid);
+        const result = await kv.get<string>([COLLECTION, path]);
+        log.info("user created: " + JSON.stringify(result));
+        return new Response(JSON.stringify(result), { status: 200 });
+      }
     }
-    return new Response(guid, { status: 200 });
+    case "PUT": {
+      const result = await kv.get<string>([COLLECTION, path]);
+      if (!result.value) {
+        log.warn("user not found: " + path);
+        return new Response("user not found: " + path, { status: 404 });
+      } else {
+        const guid = ulid();
+        kv.set([COLLECTION, path], guid);
+        const result = await kv.get<string>([COLLECTION, path]);
+        log.info("user updated: " + JSON.stringify(result));
+        return new Response(JSON.stringify(result), { status: 200 });
+      }
+    }
+    case "DELETE": {
+      const result = await kv.get<string>([COLLECTION, path]);
+      if (!result.value) {
+        log.warn("user not found: " + path);
+        return new Response("user not found: " + path, { status: 404 });
+      } else {
+        kv.delete([COLLECTION, path]);
+        log.info("user deleted: " + path);
+        return new Response(null, { status: 204 });
+      }
+    }
   }
-  return new Response("Error: no username provided in path", { status: 400 });
+  log.info("bad request");
+  return new Response("bad request", { status: 400 });
 });
