@@ -66,7 +66,7 @@ Deno.serve(options, async (request) => {
         log.warn("user not found: " + path);
         return new Response("user not found: " + path, { status: 404 });
       } else {
-        kv.delete([COLLECTION, path]);
+        await kv.delete([COLLECTION, path]);
         log.info("user deleted: " + path);
         return new Response(null, { status: 204 });
       }
