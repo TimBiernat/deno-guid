@@ -27,7 +27,9 @@ Deno.serve(options, async (request) => {
 
   switch (request.method) {
     case "GET": {
-      const result = await kv.get<string>([COLLECTION, path], { consistency: "strong" });
+      const result = await kv.get<string>([COLLECTION, path], {
+        consistency: "strong",
+      });
       if (!result.value) {
         log.warn("user not found: " + path);
         return new Response("user not found " + path, { status: 404 });
@@ -44,7 +46,9 @@ Deno.serve(options, async (request) => {
       } else {
         const guid = ulid();
         kv.set([COLLECTION, path], guid);
-        const result = await kv.get<string>([COLLECTION, path], { consistency: "strong" });
+        const result = await kv.get<string>([COLLECTION, path], {
+          consistency: "strong",
+        });
         log.info("user created: " + JSON.stringify(result));
         return new Response(JSON.stringify(result), { status: 200 });
       }
@@ -56,8 +60,19 @@ Deno.serve(options, async (request) => {
         return new Response("user not found: " + path, { status: 404 });
       } else {
         const guid = ulid();
-        kv.set([COLLECTION, path], guid);
-        const result = await kv.get<string>([COLLECTION, path], { consistency: "strong" });
+        // kv.set([COLLECTION, path], guid);
+        // const result = await kv.get<string>([COLLECTION, path], { consistency: "strong" });
+
+        const res = await kv.atomic()
+          .set([COLLECTION, path], guid)
+          .commit();
+        if (!res.ok) {
+          log.info("commit failed");
+        }
+        const result = await kv.get<string>([COLLECTION, path], {
+          consistency: "strong",
+        });
+
         log.info("user updated: " + JSON.stringify(result));
         return new Response(JSON.stringify(result), { status: 200 });
       }
